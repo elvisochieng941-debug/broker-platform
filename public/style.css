@@ -1,0 +1,457 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+body {
+  background-color: #0b0f19;
+  color: #ffffff;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* AUTHENTICATION STYLES */
+.auth-wrapper {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #151c2e 0%, #0b0f19 100%);
+}
+.auth-card {
+  background: rgba(18, 24, 38, 0.95);
+  border: 1px solid #253352;
+  padding: 40px;
+  border-radius: 16px;
+  width: 420px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+.logo-large {
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+.logo-large span {
+  color: #0faf59;
+}
+
+.auth-tabs {
+  display: flex;
+  background: #0b0f19;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 25px;
+}
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #8f9bb3;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.auth-tab.active {
+  background: #1a2238;
+  color: #ffffff;
+}
+
+.floating-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+.floating-group input {
+  width: 100%;
+  background: #0b0f19;
+  border: 1px solid #253352;
+  padding: 16px 14px 8px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.floating-group input:focus {
+  border-color: #0faf59;
+}
+.floating-group label {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  color: #8f9bb3;
+  font-size: 0.9rem;
+  pointer-events: none;
+  transition: 0.2s ease all;
+}
+.floating-group input:focus ~ label,
+.floating-group input:not(:placeholder-shown) ~ label {
+  top: 4px;
+  font-size: 0.7rem;
+  color: #0faf59;
+}
+
+.auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #8f9bb3;
+  margin-bottom: 20px;
+}
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.forgot-link {
+  color: #3366ff;
+  text-decoration: none;
+}
+.forgot-link:hover {
+  text-decoration: underline;
+}
+.forgot-desc {
+  font-size: 0.85rem;
+  color: #8f9bb3;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.btn-auth {
+  width: 100%;
+  background-color: #0faf59;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-auth:hover {
+  background-color: #0e9c4f;
+}
+.btn-back {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #253352;
+  color: #8f9bb3;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+.btn-back:hover {
+  background: #1a2238;
+  color: white;
+}
+
+.divider {
+  text-align: center;
+  color: #8f9bb3;
+  font-size: 0.8rem;
+  margin: 20px 0;
+}
+.btn-google {
+  width: 100%;
+  background: #1a2238;
+  border: 1px solid #253352;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-google:hover {
+  background: #222b45;
+}
+
+/* AUTO-DISMISSING STATUS BANNERS */
+.status-banner {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  display: none;
+}
+.status-banner.error {
+  background: rgba(255, 70, 70, 0.15);
+  color: #ff4646;
+  border: 1px solid rgba(255, 70, 70, 0.3);
+}
+.status-banner.success {
+  background: rgba(15, 175, 89, 0.15);
+  color: #0faf59;
+  border: 1px solid rgba(15, 175, 89, 0.3);
+}
+
+/* MAIN DASHBOARD LAYOUT */
+.dashboard-wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.top-nav {
+  height: 60px;
+  background-color: #121826;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #222b45;
+}
+.logo {
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+.logo span {
+  color: #0faf59;
+}
+.asset-selector select {
+  background: #1a2238;
+  color: #fff;
+  border: 1px solid #2a3655;
+  padding: 6px 12px;
+  border-radius: 6px;
+  outline: none;
+}
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.balance-container {
+  background: #1a2238;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border: 1px solid #2a3655;
+}
+.balance-container span {
+  color: #0faf59;
+  font-weight: bold;
+}
+
+.btn-history {
+  background-color: #2a3655;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-history:hover {
+  background-color: #354368;
+}
+
+.btn-deposit {
+  background-color: #0faf59;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-deposit:hover {
+  background-color: #0e9c4f;
+}
+
+.btn-withdraw {
+  background-color: #3366ff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-withdraw:hover {
+  background-color: #2952cc;
+}
+
+.btn-logout {
+  background-color: #ff4646;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-logout:hover {
+  background-color: #e03b3b;
+}
+
+/* WORKSPACE & TRADING PANEL */
+.workspace {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+.chart-area {
+  flex: 1;
+  background: #0b0f19;
+}
+.trade-panel {
+  width: 300px;
+  background: rgba(18, 24, 38, 0.95);
+  border-left: 1px solid #222b45;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.panel-group label {
+  font-size: 0.8rem;
+  color: #8f9bb3;
+  margin-bottom: 8px;
+  display: block;
+}
+.time-selectors {
+  display: flex;
+  gap: 8px;
+}
+.time-btn {
+  flex: 1;
+  background: #1a2238;
+  border: 1px solid #2a3655;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.time-btn.active {
+  background: #3366ff;
+  border-color: #3366ff;
+}
+.payout-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #8f9bb3;
+  border-top: 1px solid #222b45;
+  border-bottom: 1px solid #222b45;
+  padding: 10px 0;
+}
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.btn-trade {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.btn-call {
+  background-color: #0faf59;
+}
+.btn-call:hover {
+  background-color: #0e9c4f;
+}
+.btn-put {
+  background-color: #ff4646;
+}
+.btn-put:hover {
+  background-color: #e03b3b;
+}
+
+/* MODALS & TABLES */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background-color: #121826;
+  padding: 30px;
+  border-radius: 12px;
+  width: 380px;
+  border: 1px solid #2a3655;
+  position: relative;
+}
+.history-content {
+  width: 720px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.close-btn {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #8f9bb3;
+}
+.modal-content h2 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+.modal-content p {
+  font-size: 0.85rem;
+  color: #8f9bb3;
+  margin-bottom: 20px;
+}
+
+.table-container {
+  margin-top: 15px;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #222b45;
+  color: #8f9bb3;
+}
+th {
+  color: white;
+  background: #1a2238;
+}
+td.won {
+  color: #0faf59;
+  font-weight: bold;
+}
+td.lost {
+  color: #ff4646;
+  font-weight: bold;
+}

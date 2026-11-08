@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TradeNova - Professional Trading Broker</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- TradingView Lightweight Charts & Socket.io Client -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <!-- AUTHENTICATION CONTAINER -->
+    <div id="authContainer" class="auth-wrapper">
+      <div class="auth-card">
+        <div class="logo-large">TRADE<span>NOVA</span></div>
+
+        <div class="auth-tabs">
+          <button
+            id="tabSignin"
+            class="auth-tab active"
+            onclick="switchAuthTab('signin')"
+          >
+            Sign In
+          </button>
+          <button
+            id="tabSignup"
+            class="auth-tab"
+            onclick="switchAuthTab('signup')"
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signinForm" class="auth-form">
+          <div class="floating-group">
+            <input type="email" id="signinEmail" required placeholder=" " />
+            <label>Email Address</label>
+          </div>
+          <div class="floating-group">
+            <input
+              type="password"
+              id="signinPassword"
+              required
+              placeholder=" "
+            />
+            <label>Password</label>
+          </div>
+          <div class="auth-options">
+            <label class="checkbox-container">
+              <input type="checkbox" id="signinRemember" checked /> Remember me
+            </label>
+            <a href="#" onclick="showForgotPassword(event)" class="forgot-link"
+              >Forgot Password?</a
+            >
+          </div>
+          <button type="submit" class="btn-auth">Sign In</button>
+          <div class="divider">or continue with</div>
+          <a href="/auth/google" class="btn-google">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.9C3.5 19.7 7.4 23 12 23z"
+              />
+            </svg>
+            Google Account
+          </a>
+          <div id="signinStatus" class="status-banner"></div>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" class="auth-form" style="display: none">
+          <div class="floating-group">
+            <input type="email" id="signupEmail" required placeholder=" " />
+            <label>Email Address</label>
+          </div>
+          <div class="floating-group">
+            <input
+              type="password"
+              id="signupPassword"
+              required
+              placeholder=" "
+            />
+            <label>Create Password (min 8 chars)</label>
+          </div>
+          <div class="floating-group">
+            <input
+              type="text"
+              id="signupPhone"
+              required
+              placeholder=" "
+              maxlength="13"
+            />
+            <label>M-Pesa Phone (07XXXXXXXX)</label>
+          </div>
+          <div class="auth-options">
+            <label class="checkbox-container">
+              <input type="checkbox" id="signupRemember" checked /> Remember me
+              & Cookie Consent
+            </label>
+          </div>
+          <button type="submit" class="btn-auth">
+            Create Account & Send Code
+          </button>
+          <div class="divider">or sign up with</div>
+          <a href="/auth/google" class="btn-google">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.9C3.5 19.7 7.4 23 12 23z"
+              />
+            </svg>
+            Google Account
+          </a>
+          <div id="signupStatus" class="status-banner"></div>
+        </form>
+
+        <!-- Email Verification Code Form -->
+        <form id="verifyForm" class="auth-form" style="display: none">
+          <p class="forgot-desc">
+            Enter the 6-digit verification code sent to your email to complete
+            your registration.
+          </p>
+          <div class="floating-group">
+            <input
+              type="text"
+              id="verificationCode"
+              required
+              placeholder=" "
+              maxlength="6"
+            />
+            <label>6-Digit Code</label>
+          </div>
+          <button type="submit" class="btn-auth">
+            Verify & Complete Registration
+          </button>
+          <div id="verifyStatus" class="status-banner"></div>
+        </form>
+
+        <!-- Forgot Password Form -->
+        <form id="forgotForm" class="auth-form" style="display: none">
+          <p class="forgot-desc">
+            Enter your registered email to receive password recovery
+            instructions.
+          </p>
+          <div class="floating-group">
+            <input type="email" id="forgotEmail" required placeholder=" " />
+            <label>Email Address</label>
+          </div>
+          <button type="submit" class="btn-auth">Send Recovery Email</button>
+          <button type="button" class="btn-back" onclick="backToSignin()">
+            Back to Sign In
+          </button>
+          <div id="forgotStatus" class="status-banner"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MAIN TRADING DASHBOARD -->
+    <div
+      id="dashboardContainer"
+      class="dashboard-wrapper"
+      style="display: none"
+    >
+      <header class="top-nav">
+        <div class="logo">TRADE<span>NOVA</span></div>
+        <div class="asset-selector">
+          <select id="assetSelect">
+            <option value="EURUSD">EUR/USD (OTC) 92%</option>
+            <option value="GBPUSD">GBP/USD (OTC) 89%</option>
+            <option value="BTCUSD">BTC/USD 85%</option>
+          </select>
+        </div>
+        <div class="account-info">
+          <div class="balance-container">
+            <span class="acc-type">Balance:</span>
+            <span id="userBalance">$1,000.00</span>
+          </div>
+          <button id="openHistoryModal" class="btn-history">History</button>
+          <button id="openDepositModal" class="btn-deposit">Deposit</button>
+          <button id="openWithdrawModal" class="btn-withdraw">Withdraw</button>
+          <button id="btnLogout" class="btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="chart-area" id="chartContainer"></section>
+        <aside class="trade-panel">
+          <div class="panel-group">
+            <label>Expiry Time</label>
+            <div class="time-selectors">
+              <button class="time-btn active">1m</button>
+              <button class="time-btn">5m</button>
+              <button class="time-btn">15m</button>
+            </div>
+          </div>
+
+          <div class="panel-group floating-group">
+            <input
+              type="number"
+              id="tradeAmount"
+              value="10"
+              min="1"
+              placeholder=" "
+            />
+            <label>Investment Amount ($)</label>
+          </div>
+
+          <div class="payout-info">
+            <span>Payout: <strong>+92%</strong></span>
+            <span>Profit: <strong id="potentialProfit">$19.20</strong></span>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-trade btn-call" id="btnHigher">
+              <span>HIGHER</span>
+              <span class="arrow">▲</span>
+            </button>
+            <button class="btn-trade btn-put" id="btnLower">
+              <span>LOWER</span>
+              <span class="arrow">▼</span>
+            </button>
+          </div>
+          <div id="tradeStatus" class="status-banner"></div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeModal">&times;</span>
+        <h2>Instant M-Pesa Deposit</h2>
+        <p>Powered by Tuma API STK Push</p>
+
+        <form id="depositForm">
+          <div class="floating-group">
+            <input type="text" id="depositPhone" required placeholder=" " />
+            <label>M-Pesa Phone (07XXXXXXXX)</label>
+          </div>
+          <div class="floating-group">
+            <input type="number" id="depositAmount" required placeholder=" " />
+            <label>Amount (KES)</label>
+          </div>
+          <button type="submit" class="btn-auth" id="submitDeposit">
+            Send STK Push
+          </button>
+        </form>
+        <div id="depositStatus" class="status-banner"></div>
+      </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeWithdrawModal">&times;</span>
+        <h2>Withdraw Funds</h2>
+        <p>Transfer funds instantly to your mobile money</p>
+
+        <form id="withdrawForm">
+          <div class="floating-group">
+            <input type="text" id="withdrawPhone" required placeholder=" " />
+            <label>M-Pesa Phone (07XXXXXXXX)</label>
+          </div>
+          <div class="floating-group">
+            <input type="number" id="withdrawAmount" required placeholder=" " />
+            <label>Amount ($)</label>
+          </div>
+          <button type="submit" class="btn-auth">Confirm Withdrawal</button>
+        </form>
+        <div id="withdrawStatus" class="status-banner"></div>
+      </div>
+    </div>
+
+    <!-- Transaction History Modal -->
+    <div id="historyModal" class="modal">
+      <div class="modal-content history-content">
+        <span class="close-btn" id="closeHistoryModal">&times;</span>
+        <h2>Transaction & Trade History</h2>
+        <div class="table-container">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Status</th>
+                <th>Payout</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- Dynamically populated past trades -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
