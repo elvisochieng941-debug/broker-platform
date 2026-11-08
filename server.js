@@ -114,6 +114,16 @@ async function startServer() {
       expires_at TIMESTAMP NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS deposits (
+      id SERIAL PRIMARY KEY,
+      user_id INT REFERENCES users(id),
+      checkout_request_id VARCHAR(255) UNIQUE,
+      amount NUMERIC(10,2),
+      phone VARCHAR(20),
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS trades (
       id SERIAL PRIMARY KEY,
       user_id INT REFERENCES users(id),
@@ -223,12 +233,10 @@ async function startServer() {
           .status(400)
           .json({ success: false, error: 'Invalid email.' });
       if (!password || password.length < 8)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: 'Password must be at least 8 chars.',
-          });
+        return res.status(400).json({
+          success: false,
+          error: 'Password must be at least 8 chars.',
+        });
 
       const phoneRegex = /^(?:254|\+254|0)?([17][0-9]{8})$/;
       if (!phoneRegex.test(phone))
@@ -450,18 +458,75 @@ async function startServer() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      const checkoutRequestId =
+        paymentRes.data?.data?.CheckoutRequestID ||
+        paymentRes.data?.CheckoutRequestID ||
+        `tuma_${Date.now()}`;
+
+      await pool.query(
+        'INSERT INTO deposits (user_id, checkout_request_id, amount, phone, status) VALUES ($1, $2, $3, $4, $5)',
+        [req.session.userId, checkoutRequestId, amount, fmtPhone, 'pending']
+      );
+
       res.json({
         success: true,
-        message: 'STK Push sent!',
+        message: 'STK Push sent! Enter your M-Pesa PIN on your phone.',
         data: paymentRes.data,
       });
     } catch (err) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          error: err.response?.data?.message || 'Deposit failed.',
-        });
+      res.status(500).json({
+        success: false,
+        error: err.response?.data?.message || 'Deposit initiation failed.',
+      });
+    }
+  });
+
+  // Automated Tuma Webhook Callback Processor
+  app.post('/api/webhook/tuma', async (req, res) => {
+    try {
+      const callbackData = req.body;
+      console.log('🔔 Tuma Webhook Received:', JSON.stringify(callbackData));
+
+      const resultCode =
+        callbackData.ResultCode ?? callbackData.result_code ?? 1;
+      const checkoutRequestId =
+        callbackData.CheckoutRequestID ||
+        callbackData.checkout_request_id ||
+        callbackData.MerchantRequestID;
+
+      if (resultCode === 0 || resultCode === '0') {
+        const depositQuery = await pool.query(
+          "SELECT * FROM deposits WHERE checkout_request_id = $1 AND status = 'pending'",
+          [checkoutRequestId]
+        );
+
+        if (depositQuery.rows.length > 0) {
+          const deposit = depositQuery.rows[0];
+          const usdCredit = Number(deposit.amount) / 130; // Conversion rate mapping KES to USD
+
+          await pool.query(
+            "UPDATE deposits SET status = 'completed' WHERE id = $1",
+            [deposit.id]
+          );
+          await pool.query(
+            'UPDATE users SET balance = balance + $1 WHERE id = $2',
+            [usdCredit, deposit.user_id]
+          );
+          console.log(
+            `✅ Credited user ${deposit.user_id} with $${usdCredit.toFixed(2)} from M-Pesa deposit.`
+          );
+        }
+      } else {
+        await pool.query(
+          "UPDATE deposits SET status = 'failed' WHERE checkout_request_id = $1",
+          [checkoutRequestId]
+        );
+      }
+
+      res.status(200).json({ received: true });
+    } catch (err) {
+      console.error('⚠️ Tuma Webhook Error:', err.message);
+      res.status(500).json({ received: false, error: err.message });
     }
   });
 
@@ -494,10 +559,6 @@ async function startServer() {
       res.status(500).json({ success: false, error: 'Withdrawal failed.' });
     }
   });
-
-  app.post('/api/webhook/tuma', (req, res) =>
-    res.status(200).json({ received: true })
-  );
 
   app.post('/api/trade/place', async (req, res) => {
     if (!req.session?.userId)

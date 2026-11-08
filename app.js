@@ -7,6 +7,7 @@ let pendingVerificationEmail = '';
 
 function showBanner(elementId, message, type = 'error') {
   const el = document.getElementById(elementId);
+  if (!el) return;
   el.textContent = message;
   el.className = `status-banner ${type}`;
   el.style.display = 'block';
@@ -16,40 +17,48 @@ function showBanner(elementId, message, type = 'error') {
 }
 
 function switchAuthTab(tab) {
-  document.getElementById('signinForm').style.display =
-    tab === 'signin' ? 'block' : 'none';
-  document.getElementById('signupForm').style.display =
-    tab === 'signup' ? 'block' : 'none';
-  document.getElementById('verifyForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'none';
-  document
-    .getElementById('tabSignin')
-    .classList.toggle('active', tab === 'signin');
-  document
-    .getElementById('tabSignup')
-    .classList.toggle('active', tab === 'signup');
+  const signinForm = document.getElementById('signinForm');
+  const signupForm = document.getElementById('signupForm');
+  const verifyForm = document.getElementById('verifyForm');
+  const forgotForm = document.getElementById('forgotForm');
+  const tabSignin = document.getElementById('tabSignin');
+  const tabSignup = document.getElementById('tabSignup');
+
+  if (signinForm)
+    signinForm.style.display = tab === 'signin' ? 'block' : 'none';
+  if (signupForm)
+    signupForm.style.display = tab === 'signup' ? 'block' : 'none';
+  if (verifyForm) verifyForm.style.display = 'none';
+  if (forgotForm) forgotForm.style.display = 'none';
+
+  if (tabSignin) tabSignin.classList.toggle('active', tab === 'signin');
+  if (tabSignup) tabSignup.classList.toggle('active', tab === 'signup');
 }
 
 function showForgotPassword(e) {
   e.preventDefault();
-  document.getElementById('signinForm').style.display = 'none';
-  document.getElementById('signupForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'block';
+  const signinForm = document.getElementById('signinForm');
+  const signupForm = document.getElementById('signupForm');
+  const forgotForm = document.getElementById('forgotForm');
+
+  if (signinForm) signinForm.style.display = 'none';
+  if (signupForm) signupForm.style.display = 'none';
+  if (forgotForm) forgotForm.style.display = 'block';
 }
 
 function backToSignin() {
   switchAuthTab('signin');
 }
 
-// Password visibility toggle function
 function togglePassword(fieldId, iconEl) {
   const input = document.getElementById(fieldId);
+  if (!input) return;
   if (input.type === 'password') {
     input.type = 'text';
-    iconEl.textContent = '🔒';
+    if (iconEl) iconEl.textContent = '🔒';
   } else {
     input.type = 'password';
-    iconEl.textContent = '👁️';
+    if (iconEl) iconEl.textContent = '👁️';
   }
 }
 
@@ -65,106 +74,129 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-document.getElementById('signinForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('signinEmail').value;
-  const password = document.getElementById('signinPassword').value;
-  const remember = document.getElementById('signinRemember').checked;
+const signinFormEl = document.getElementById('signinForm');
+if (signinFormEl) {
+  signinFormEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signinEmail').value;
+    const password = document.getElementById('signinPassword').value;
+    const remember = document.getElementById('signinRemember').checked;
 
-  const res = await fetch(`${BACKEND_URL}/api/auth/signin`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email, password, remember }),
+    const res = await fetch(`${BACKEND_URL}/api/auth/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, remember }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showBanner('signinStatus', data.message, 'success');
+      setTimeout(() => showDashboard(data.user), 1000);
+    } else {
+      showBanner('signinStatus', data.error, 'error');
+    }
   });
-  const data = await res.json();
-  if (data.success) {
-    showBanner('signinStatus', data.message, 'success');
-    setTimeout(() => showDashboard(data.user), 1000);
-  } else {
-    showBanner('signinStatus', data.error, 'error');
-  }
-});
+}
 
-document.getElementById('signupForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const phone = document.getElementById('signupPhone').value;
+const signupFormEl = document.getElementById('signupForm');
+if (signupFormEl) {
+  signupFormEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const phone = document.getElementById('signupPhone').value;
 
-  const res = await fetch(`${BACKEND_URL}/api/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email, password, phone }),
+    const res = await fetch(`${BACKEND_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, phone }),
+    });
+    const data = await res.json();
+    if (data.success && data.requiresVerification) {
+      pendingVerificationEmail = data.email;
+      signupFormEl.style.display = 'none';
+      const verifyForm = document.getElementById('verifyForm');
+      if (verifyForm) verifyForm.style.display = 'block';
+      showBanner('verifyStatus', data.message, 'success');
+    } else {
+      showBanner('signupStatus', data.error, 'error');
+    }
   });
-  const data = await res.json();
-  if (data.success && data.requiresVerification) {
-    pendingVerificationEmail = data.email;
-    document.getElementById('signupForm').style.display = 'none';
-    document.getElementById('verifyForm').style.display = 'block';
-    showBanner('verifyStatus', data.message, 'success');
-  } else {
-    showBanner('signupStatus', data.error, 'error');
-  }
-});
+}
 
-document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const code = document.getElementById('verificationCode').value;
-  const res = await fetch(`${BACKEND_URL}/api/auth/verify-code`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      email: pendingVerificationEmail,
-      code,
-      remember: true,
-    }),
+const verifyFormEl = document.getElementById('verifyForm');
+if (verifyFormEl) {
+  verifyFormEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('verificationCode').value;
+    const res = await fetch(`${BACKEND_URL}/api/auth/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        email: pendingVerificationEmail,
+        code,
+        remember: true,
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showBanner('verifyStatus', data.message, 'success');
+      setTimeout(() => showDashboard(data.user), 1000);
+    } else {
+      showBanner('verifyStatus', data.error, 'error');
+    }
   });
-  const data = await res.json();
-  if (data.success) {
-    showBanner('verifyStatus', data.message, 'success');
-    setTimeout(() => showDashboard(data.user), 1000);
-  } else {
-    showBanner('verifyStatus', data.error, 'error');
-  }
-});
+}
 
-document.getElementById('forgotForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('forgotEmail').value;
-  const res = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email }),
+const forgotFormEl = document.getElementById('forgotForm');
+if (forgotFormEl) {
+  forgotFormEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    const res = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    showBanner(
+      'forgotStatus',
+      data.message || data.error,
+      data.success ? 'success' : 'error'
+    );
   });
-  const data = await res.json();
-  showBanner(
-    'forgotStatus',
-    data.message || data.error,
-    data.success ? 'success' : 'error'
-  );
-});
+}
 
-document.getElementById('btnLogout').addEventListener('click', async () => {
-  if (socket) socket.disconnect();
-  await fetch(`${BACKEND_URL}/api/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
+const btnLogoutEl = document.getElementById('btnLogout');
+if (btnLogoutEl) {
+  btnLogoutEl.addEventListener('click', async () => {
+    if (socket) socket.disconnect();
+    await fetch(`${BACKEND_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const dashContainer = document.getElementById('dashboardContainer');
+    const authContainer = document.getElementById('authContainer');
+    if (dashContainer) dashContainer.style.display = 'none';
+    if (authContainer) authContainer.style.display = 'flex';
   });
-  document.getElementById('dashboardContainer').style.display = 'none';
-  document.getElementById('authContainer').style.display = 'flex';
-});
+}
 
 async function showDashboard(user) {
-  document.getElementById('authContainer').style.display = 'none';
-  document.getElementById('dashboardContainer').style.display = 'flex';
-  document.getElementById('userBalance').textContent =
-    `$${Number(user.balance).toFixed(2)}`;
+  const authContainer = document.getElementById('authContainer');
+  const dashContainer = document.getElementById('dashboardContainer');
+  const userBalance = document.getElementById('userBalance');
+
+  if (authContainer) authContainer.style.display = 'none';
+  if (dashContainer) dashContainer.style.display = 'flex';
+  if (userBalance)
+    userBalance.textContent = `$${Number(user.balance).toFixed(2)}`;
 
   const chartContainer = document.getElementById('chartContainer');
+  if (!chartContainer) return;
   chartContainer.innerHTML = '';
 
   const chart = LightweightCharts.createChart(chartContainer, {
@@ -239,16 +271,20 @@ async function showDashboard(user) {
   });
 }
 
-document
-  .getElementById('btnHigher')
-  .addEventListener('click', () => executeTrade('higher'));
-document
-  .getElementById('btnLower')
-  .addEventListener('click', () => executeTrade('lower'));
+const btnHigher = document.getElementById('btnHigher');
+const btnLower = document.getElementById('btnLower');
+
+if (btnHigher)
+  btnHigher.addEventListener('click', () => executeTrade('higher'));
+if (btnLower) btnLower.addEventListener('click', () => executeTrade('lower'));
 
 async function executeTrade(direction) {
-  const amount = parseFloat(document.getElementById('tradeAmount').value) || 10;
-  const asset = document.getElementById('assetSelect').value;
+  const amountInput = document.getElementById('tradeAmount');
+  const assetSelect = document.getElementById('assetSelect');
+  const userBalance = document.getElementById('userBalance');
+
+  const amount = parseFloat(amountInput ? amountInput.value : 10) || 10;
+  const asset = assetSelect ? assetSelect.value : 'EURUSD';
 
   const res = await fetch(`${BACKEND_URL}/api/trade/place`, {
     method: 'POST',
@@ -258,8 +294,8 @@ async function executeTrade(direction) {
   });
   const data = await res.json();
   if (data.success) {
-    document.getElementById('userBalance').textContent =
-      `$${Number(data.newBalance).toFixed(2)}`;
+    if (userBalance)
+      userBalance.textContent = `$${Number(data.newBalance).toFixed(2)}`;
     showBanner(
       'tradeStatus',
       `Trade placed (${direction.toUpperCase()})!`,
@@ -272,41 +308,62 @@ async function executeTrade(direction) {
 
 // Modals
 const depositModal = document.getElementById('depositModal');
-document
-  .getElementById('openDepositModal')
-  .addEventListener('click', () => (depositModal.style.display = 'flex'));
-document
-  .getElementById('closeModal')
-  .addEventListener('click', () => (depositModal.style.display = 'none'));
-document.getElementById('depositForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const res = await fetch(`${BACKEND_URL}/api/deposit`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      amount: document.getElementById('depositAmount').value,
-      phone: document.getElementById('depositPhone').value,
-    }),
-  });
-  const data = await res.json();
-  showBanner(
-    'depositStatus',
-    data.message || data.error,
-    data.success ? 'success' : 'error'
+const openDepositModal = document.getElementById('openDepositModal');
+const closeModal = document.getElementById('closeModal');
+const depositForm = document.getElementById('depositForm');
+
+if (openDepositModal && depositModal) {
+  openDepositModal.addEventListener(
+    'click',
+    () => (depositModal.style.display = 'flex')
   );
-});
+}
+if (closeModal && depositModal) {
+  closeModal.addEventListener(
+    'click',
+    () => (depositModal.style.display = 'none')
+  );
+}
+if (depositForm) {
+  depositForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch(`${BACKEND_URL}/api/deposit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        amount: document.getElementById('depositAmount').value,
+        phone: document.getElementById('depositPhone').value,
+      }),
+    });
+    const data = await res.json();
+    showBanner(
+      'depositStatus',
+      data.message || data.error,
+      data.success ? 'success' : 'error'
+    );
+  });
+}
 
 const withdrawModal = document.getElementById('withdrawModal');
-document
-  .getElementById('openWithdrawModal')
-  .addEventListener('click', () => (withdrawModal.style.display = 'flex'));
-document
-  .getElementById('closeWithdrawModal')
-  .addEventListener('click', () => (withdrawModal.style.display = 'none'));
-document
-  .getElementById('withdrawForm')
-  .addEventListener('submit', async (e) => {
+const openWithdrawModal = document.getElementById('openWithdrawModal');
+const closeWithdrawModal = document.getElementById('closeWithdrawModal');
+const withdrawForm = document.getElementById('withdrawForm');
+
+if (openWithdrawModal && withdrawModal) {
+  openWithdrawModal.addEventListener(
+    'click',
+    () => (withdrawModal.style.display = 'flex')
+  );
+}
+if (closeWithdrawModal && withdrawModal) {
+  closeWithdrawModal.addEventListener(
+    'click',
+    () => (withdrawModal.style.display = 'none')
+  );
+}
+if (withdrawForm) {
+  withdrawForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const res = await fetch(`${BACKEND_URL}/api/withdraw`, {
       method: 'POST',
@@ -318,21 +375,26 @@ document
       }),
     });
     const data = await res.json();
+    const userBalance = document.getElementById('userBalance');
     if (data.success) {
-      document.getElementById('userBalance').textContent =
-        `$${Number(data.newBalance).toFixed(2)}`;
+      if (userBalance)
+        userBalance.textContent = `$${Number(data.newBalance).toFixed(2)}`;
       showBanner('withdrawStatus', data.message, 'success');
     } else {
       showBanner('withdrawStatus', data.error, 'error');
     }
   });
+}
 
 const historyModal = document.getElementById('historyModal');
-document
-  .getElementById('openHistoryModal')
-  .addEventListener('click', async () => {
+const openHistoryModal = document.getElementById('openHistoryModal');
+const closeHistoryModal = document.getElementById('closeHistoryModal');
+
+if (openHistoryModal && historyModal) {
+  openHistoryModal.addEventListener('click', async () => {
     historyModal.style.display = 'flex';
     const tbody = document.getElementById('historyTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
     const res = await fetch(`${BACKEND_URL}/api/trade/history`, {
       credentials: 'include',
@@ -354,12 +416,21 @@ document
       tbody.innerHTML = '<tr><td colspan="7">No history found.</td></tr>';
     }
   });
-document
-  .getElementById('closeHistoryModal')
-  .addEventListener('click', () => (historyModal.style.display = 'none'));
+}
+if (closeHistoryModal && historyModal) {
+  closeHistoryModal.addEventListener(
+    'click',
+    () => (historyModal.style.display = 'none')
+  );
+}
 
-document.getElementById('tradeAmount').addEventListener('input', (e) => {
-  const val = parseFloat(e.target.value) || 0;
-  document.getElementById('potentialProfit').textContent =
-    `$${(val + val * 0.92).toFixed(2)}`;
-});
+const tradeAmountInput = document.getElementById('tradeAmount');
+if (tradeAmountInput) {
+  tradeAmountInput.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value) || 0;
+    const profitEl = document.getElementById('potentialProfit');
+    if (profitEl) {
+      profitEl.textContent = `$${(val * 1.92).toFixed(2)}`;
+    }
+  });
+}
