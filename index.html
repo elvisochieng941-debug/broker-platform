@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TradeNova - Professional Trading Broker</title>
     <link rel="stylesheet" href="style.css" />
-    <!-- TradingView Lightweight Charts & Socket.io Client -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script src="/socket.io/socket.io.js"></script>
   </head>
@@ -38,7 +37,7 @@
             <input type="email" id="signinEmail" required placeholder=" " />
             <label>Email Address</label>
           </div>
-          <div class="floating-group">
+          <div class="floating-group password-group">
             <input
               type="password"
               id="signinPassword"
@@ -46,6 +45,11 @@
               placeholder=" "
             />
             <label>Password</label>
+            <span
+              class="toggle-password"
+              onclick="togglePassword('signinPassword', this)"
+              >👁️</span
+            >
           </div>
           <div class="auth-options">
             <label class="checkbox-container">
@@ -57,27 +61,7 @@
           </div>
           <button type="submit" class="btn-auth">Sign In</button>
           <div class="divider">or continue with</div>
-          <a href="/auth/google" class="btn-google">
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.9C3.5 19.7 7.4 23 12 23z"
-              />
-            </svg>
-            Google Account
-          </a>
+          <a href="/auth/google" class="btn-google">Google Account</a>
           <div id="signinStatus" class="status-banner"></div>
         </form>
 
@@ -87,7 +71,7 @@
             <input type="email" id="signupEmail" required placeholder=" " />
             <label>Email Address</label>
           </div>
-          <div class="floating-group">
+          <div class="floating-group password-group">
             <input
               type="password"
               id="signupPassword"
@@ -95,6 +79,11 @@
               placeholder=" "
             />
             <label>Create Password (min 8 chars)</label>
+            <span
+              class="toggle-password"
+              onclick="togglePassword('signupPassword', this)"
+              >👁️</span
+            >
           </div>
           <div class="floating-group">
             <input
@@ -106,37 +95,11 @@
             />
             <label>M-Pesa Phone (07XXXXXXXX)</label>
           </div>
-          <div class="auth-options">
-            <label class="checkbox-container">
-              <input type="checkbox" id="signupRemember" checked /> Remember me
-              & Cookie Consent
-            </label>
-          </div>
           <button type="submit" class="btn-auth">
             Create Account & Send Code
           </button>
           <div class="divider">or sign up with</div>
-          <a href="/auth/google" class="btn-google">
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.1 8.9 5 12 5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.7s.2-2 .4-2.7L1.6 6.4C.6 8.4 0 10.6 0 13s.6 4.6 1.6 6.6l3.7-2.9z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5.3L1.6 15.9C3.5 19.7 7.4 23 12 23z"
-              />
-            </svg>
-            Google Account
-          </a>
+          <a href="/auth/google" class="btn-google">Google Account</a>
           <div id="signupStatus" class="status-banner"></div>
         </form>
 
@@ -257,7 +220,6 @@
         <span class="close-btn" id="closeModal">&times;</span>
         <h2>Instant M-Pesa Deposit</h2>
         <p>Powered by Tuma API STK Push</p>
-
         <form id="depositForm">
           <div class="floating-group">
             <input type="text" id="depositPhone" required placeholder=" " />
@@ -267,9 +229,7 @@
             <input type="number" id="depositAmount" required placeholder=" " />
             <label>Amount (KES)</label>
           </div>
-          <button type="submit" class="btn-auth" id="submitDeposit">
-            Send STK Push
-          </button>
+          <button type="submit" class="btn-auth">Send STK Push</button>
         </form>
         <div id="depositStatus" class="status-banner"></div>
       </div>
@@ -281,7 +241,6 @@
         <span class="close-btn" id="closeWithdrawModal">&times;</span>
         <h2>Withdraw Funds</h2>
         <p>Transfer funds instantly to your mobile money</p>
-
         <form id="withdrawForm">
           <div class="floating-group">
             <input type="text" id="withdrawPhone" required placeholder=" " />
@@ -297,13 +256,13 @@
       </div>
     </div>
 
-    <!-- Transaction History Modal -->
+    <!-- History Modal -->
     <div id="historyModal" class="modal">
       <div class="modal-content history-content">
         <span class="close-btn" id="closeHistoryModal">&times;</span>
         <h2>Transaction & Trade History</h2>
         <div class="table-container">
-          <table id="historyTable">
+          <table>
             <thead>
               <tr>
                 <th>Asset</th>
@@ -315,9 +274,7 @@
                 <th>Payout</th>
               </tr>
             </thead>
-            <tbody id="historyTableBody">
-              <!-- Dynamically populated past trades -->
-            </tbody>
+            <tbody id="historyTableBody"></tbody>
           </table>
         </div>
       </div>

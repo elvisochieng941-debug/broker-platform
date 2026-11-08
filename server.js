@@ -17,11 +17,10 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// Configure CORS to allow your GitHub Pages frontend and local development
 app.use(
   cors({
     origin: [
-      'https://elvisochieng941-debug.github.io',
+      'https://broker-platform-3alf.onrender.com',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
     ],
@@ -32,7 +31,7 @@ app.use(
 const io = new Server(server, {
   cors: {
     origin: [
-      'https://elvisochieng941-debug.github.io',
+      'https://broker-platform-3alf.onrender.com',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
     ],
@@ -41,7 +40,6 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
-
 const targetDbUrl =
   process.env.DATABASE_URL ||
   'postgresql://postgres:password@localhost:5432/tradenova_db';
@@ -78,7 +76,6 @@ let pool;
 
 async function startServer() {
   await ensureDatabaseExists();
-
   pool = new Pool({
     connectionString: targetDbUrl,
     ssl:
@@ -135,7 +132,7 @@ async function startServer() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(express.static(path.join(__dirname, 'public')));
+  app.use(express.static(path.join(__dirname)));
 
   app.use(
     session({
@@ -168,7 +165,7 @@ async function startServer() {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL:
           process.env.CALLBACK_URL ||
-          'http://localhost:3000/auth/google/callback',
+          'https://broker-platform-3alf.onrender.com/auth/google/callback',
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -208,8 +205,6 @@ async function startServer() {
     }
   });
 
-  // --- AUTHENTICATION & VERIFICATION ROUTES ---
-
   app.get('/api/auth/status', (req, res) => {
     if (req.isAuthenticated && req.isAuthenticated()) {
       res.json({ authenticated: true, user: req.user });
@@ -223,33 +218,23 @@ async function startServer() {
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, phone } = req.body;
-
-      if (!email || !email.includes('@')) {
+      if (!email || !email.includes('@'))
+        return res
+          .status(400)
+          .json({ success: false, error: 'Invalid email.' });
+      if (!password || password.length < 8)
         return res
           .status(400)
           .json({
             success: false,
-            error: 'Please enter a valid email address.',
+            error: 'Password must be at least 8 chars.',
           });
-      }
-      if (!password || password.length < 8) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: 'Password must be at least 8 characters long.',
-          });
-      }
 
       const phoneRegex = /^(?:254|\+254|0)?([17][0-9]{8})$/;
-      if (!phoneRegex.test(phone)) {
+      if (!phoneRegex.test(phone))
         return res
           .status(400)
-          .json({
-            success: false,
-            error: 'Invalid phone number format. Use 07XXXXXXXX.',
-          });
-      }
+          .json({ success: false, error: 'Invalid phone number.' });
 
       const emailCheck = await pool.query(
         'SELECT * FROM users WHERE email = $1',
@@ -258,10 +243,7 @@ async function startServer() {
       if (emailCheck.rows.length > 0 && emailCheck.rows[0].verified) {
         return res
           .status(400)
-          .json({
-            success: false,
-            error: 'Email already registered. Please sign in.',
-          });
+          .json({ success: false, error: 'Email already registered.' });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -284,8 +266,8 @@ async function startServer() {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'TradeNova - Account Verification Code',
-        text: `Your TradeNova verification code is: ${verificationCode}. Enter this code on the website to complete registration.`,
+        subject: 'TradeNova - Verification Code',
+        text: `Your verification code is: ${verificationCode}`,
       });
 
       res.json({
@@ -295,10 +277,9 @@ async function startServer() {
         message: 'Verification code sent to your email!',
       });
     } catch (err) {
-      console.error('Signup Error:', err);
       res
         .status(500)
-        .json({ success: false, error: 'Server error during sign up.' });
+        .json({ success: false, error: 'Server error during signup.' });
     }
   });
 
@@ -308,28 +289,22 @@ async function startServer() {
       const result = await pool.query('SELECT * FROM users WHERE email = $1', [
         email,
       ]);
-
-      if (result.rows.length === 0) {
+      if (result.rows.length === 0)
         return res
           .status(400)
-          .json({ success: false, error: 'User account not found.' });
-      }
+          .json({ success: false, error: 'User not found.' });
 
       const user = result.rows[0];
       if (user.verification_code !== code.toString().trim()) {
         return res
           .status(400)
-          .json({
-            success: false,
-            error: 'Invalid verification code entered.',
-          });
+          .json({ success: false, error: 'Invalid verification code.' });
       }
 
       await pool.query(
         'UPDATE users SET verified = TRUE, verification_code = NULL WHERE email = $1',
         [email]
       );
-
       req.session.userId = user.id;
       req.session.user = {
         email: user.email,
@@ -344,7 +319,6 @@ async function startServer() {
         user: req.session.user,
       });
     } catch (err) {
-      console.error('Verification Error:', err);
       res.status(500).json({ success: false, error: 'Verification failed.' });
     }
   });
@@ -355,29 +329,22 @@ async function startServer() {
       const result = await pool.query('SELECT * FROM users WHERE email = $1', [
         email,
       ]);
-
-      if (result.rows.length === 0) {
+      if (result.rows.length === 0)
         return res
           .status(401)
-          .json({ success: false, error: 'No account found with this email.' });
-      }
+          .json({ success: false, error: 'Account not found.' });
 
       const user = result.rows[0];
-      if (!user.verified) {
+      if (!user.verified)
         return res
           .status(401)
-          .json({
-            success: false,
-            error: 'Account not verified. Please complete email verification.',
-          });
-      }
+          .json({ success: false, error: 'Please verify your email first.' });
 
       const match = await bcrypt.compare(password, user.password_hash);
-      if (!match) {
+      if (!match)
         return res
           .status(401)
-          .json({ success: false, error: 'Incorrect password entered.' });
-      }
+          .json({ success: false, error: 'Incorrect password.' });
 
       req.session.userId = user.id;
       req.session.user = {
@@ -393,10 +360,9 @@ async function startServer() {
         user: req.session.user,
       });
     } catch (err) {
-      console.error('Signin Error:', err);
       res
         .status(500)
-        .json({ success: false, error: 'Server authentication failure.' });
+        .json({ success: false, error: 'Authentication failure.' });
     }
   });
 
@@ -406,45 +372,30 @@ async function startServer() {
       const result = await pool.query('SELECT * FROM users WHERE email = $1', [
         email,
       ]);
-
-      if (result.rows.length === 0) {
+      if (result.rows.length === 0)
         return res
           .status(404)
-          .json({
-            success: false,
-            error: 'No user registered with this email.',
-          });
-      }
+          .json({ success: false, error: 'Email not registered.' });
 
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 3600000);
-
       await pool.query('DELETE FROM password_resets WHERE email = $1', [email]);
       await pool.query(
         'INSERT INTO password_resets (email, token, expires_at) VALUES ($1, $2, $3)',
         [email, token, expiresAt]
       );
 
-      const resetLink = `${process.env.BASE_URL || 'http://localhost:3000'}/reset-password.html?token=${token}&email=${email}`;
-
+      const resetLink = `${process.env.BASE_URL}/reset-password.html?token=${token}&email=${email}`;
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'TradeNova - Password Recovery',
-        text: `Reset your TradeNova password using this link (valid for 1 hour): \n\n${resetLink}`,
+        subject: 'TradeNova - Password Reset',
+        text: `Reset link: ${resetLink}`,
       });
 
-      res.json({
-        success: true,
-        message: 'Password recovery instructions sent to your email.',
-      });
+      res.json({ success: true, message: 'Recovery email sent.' });
     } catch (err) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          error: 'Failed to process password recovery.',
-        });
+      res.status(500).json({ success: false, error: 'Failed.' });
     }
   });
 
@@ -466,15 +417,12 @@ async function startServer() {
     req.logout(() => {
       req.session.destroy(() => {
         res.clearCookie('connect.sid');
-        res.json({ success: true, message: 'Logged out successfully.' });
+        res.json({ success: true, message: 'Logged out.' });
       });
     });
   });
 
-  // --- TUMA API STK PUSH & WITHDRAWAL ROUTES ---
-
   const TUMA_BASE_URL = process.env.TUMA_BASE_URL || 'https://api.tuma.co.ke';
-
   async function getTumaToken() {
     const response = await axios.post(`${TUMA_BASE_URL}/auth/token`, {
       email: process.env.TUMA_BUSINESS_EMAIL,
@@ -484,162 +432,110 @@ async function startServer() {
   }
 
   app.post('/api/deposit', async (req, res) => {
-    if (!req.session || !req.session.userId) {
-      return res
-        .status(401)
-        .json({ success: false, error: 'Unauthorized. Please sign in.' });
-    }
-
+    if (!req.session?.userId)
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
     try {
       const { amount, phone } = req.body;
-      const phoneRegex = /^(?:254|\+254|0)?([17][0-9]{8})$/;
-      if (!phoneRegex.test(phone)) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Invalid phone number format.' });
-      }
-
       const token = await getTumaToken();
-      let formattedPhone = phone.toString();
-      if (formattedPhone.startsWith('0'))
-        formattedPhone = '254' + formattedPhone.slice(1);
-      else if (formattedPhone.startsWith('+'))
-        formattedPhone = formattedPhone.slice(1);
+      let fmtPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone;
 
       const paymentRes = await axios.post(
         `${TUMA_BASE_URL}/payment/stk-push`,
         {
           amount: Number(amount),
-          phone: formattedPhone,
-          callback_url: `${process.env.BASE_URL || 'http://localhost:3000'}/api/webhook/tuma`,
-          description: `TradeNova Deposit - User #${req.session.userId}`,
+          phone: fmtPhone,
+          callback_url: `${process.env.BASE_URL}/api/webhook/tuma`,
+          description: `TradeNova Deposit #${req.session.userId}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       res.json({
         success: true,
-        message: 'STK Push sent successfully to your phone!',
+        message: 'STK Push sent!',
         data: paymentRes.data,
       });
-    } catch (error) {
-      console.error('Deposit Error:', error.response?.data || error.message);
+    } catch (err) {
       res
         .status(500)
         .json({
           success: false,
-          error:
-            error.response?.data?.message ||
-            'M-Pesa payment initiation failed via Tuma API.',
+          error: err.response?.data?.message || 'Deposit failed.',
         });
     }
   });
 
   app.post('/api/withdraw', async (req, res) => {
-    if (!req.session || !req.session.userId) {
+    if (!req.session?.userId)
       return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
-
     const { amount, phone } = req.body;
-    const userId = req.session.userId;
-
     try {
       const userRes = await pool.query(
         'SELECT balance FROM users WHERE id = $1',
-        [userId]
+        [req.session.userId]
       );
       const balance = Number(userRes.rows[0].balance);
-
-      if (balance < amount) {
+      if (balance < amount)
         return res
           .status(400)
-          .json({
-            success: false,
-            error: 'Insufficient funds for withdrawal.',
-          });
-      }
+          .json({ success: false, error: 'Insufficient funds.' });
 
       await pool.query(
         'UPDATE users SET balance = balance - $1 WHERE id = $2',
-        [amount, userId]
+        [amount, req.session.userId]
       );
       req.session.user.balance = balance - Number(amount);
-
       res.json({
         success: true,
-        message: `Successfully withdrew $${amount} to ${phone}!`,
+        message: `Withdrew $${amount} to ${phone}`,
         newBalance: req.session.user.balance,
       });
     } catch (err) {
-      res
-        .status(500)
-        .json({ success: false, error: 'Withdrawal processing failed.' });
+      res.status(500).json({ success: false, error: 'Withdrawal failed.' });
     }
   });
 
-  app.post('/api/webhook/tuma', async (req, res) => {
-    try {
-      const webhookData = req.body;
-      console.log('🔔 Tuma Webhook Received:', webhookData);
-      res.status(200).json({ received: true });
-    } catch (err) {
-      res.status(500).json({ received: false });
-    }
-  });
-
-  // --- TRADING & HISTORY APIS ---
+  app.post('/api/webhook/tuma', (req, res) =>
+    res.status(200).json({ received: true })
+  );
 
   app.post('/api/trade/place', async (req, res) => {
-    if (!req.session || !req.session.userId) {
+    if (!req.session?.userId)
       return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
-
     const { asset, amount, direction, entryPrice } = req.body;
-    const userId = req.session.userId;
-
     try {
       const userRes = await pool.query(
         'SELECT balance FROM users WHERE id = $1',
-        [userId]
+        [req.session.userId]
       );
       const balance = Number(userRes.rows[0].balance);
-
-      if (balance < amount) {
+      if (balance < amount)
         return res
           .status(400)
-          .json({ success: false, error: 'Insufficient account balance.' });
-      }
+          .json({ success: false, error: 'Insufficient balance.' });
 
       const expiresAt = new Date(Date.now() + 60000);
       await pool.query(
         'UPDATE users SET balance = balance - $1 WHERE id = $2',
-        [amount, userId]
+        [amount, req.session.userId]
       );
-
       const tradeRes = await pool.query(
         'INSERT INTO trades (user_id, asset, amount, direction, entry_price, expires_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [userId, asset, amount, direction, entryPrice, expiresAt]
+        [req.session.userId, asset, amount, direction, entryPrice, expiresAt]
       );
-
       req.session.user.balance = balance - amount;
       res.json({
         success: true,
         trade: tradeRes.rows[0],
-        newBalance: balance - amount,
+        newBalance: req.session.user.balance,
       });
     } catch (err) {
-      res.status(500).json({ success: false, error: 'Failed to place trade.' });
+      res.status(500).json({ success: false, error: 'Trade failed.' });
     }
   });
 
   app.get('/api/trade/history', async (req, res) => {
-    if (!req.session || !req.session.userId)
-      return res.status(401).json({ success: false });
+    if (!req.session?.userId) return res.status(401).json({ success: false });
     const trades = await pool.query(
       'SELECT * FROM trades WHERE user_id = $1 ORDER BY id DESC',
       [req.session.userId]
@@ -647,16 +543,11 @@ async function startServer() {
     res.json({ success: true, trades: trades.rows });
   });
 
-  app.get('/api/config/tv-key', (req, res) => {
-    res.json({ apiKey: process.env.TRADINGVIEW_API_KEY });
-  });
-
-  // --- LIVE WEBSOCKET TICK & SETTLEMENT WORKER ---
-
   let currentPrice = 1.0925;
   setInterval(() => {
-    const delta = (Math.random() - 0.49) * 0.0008;
-    currentPrice = Number((currentPrice + delta).toFixed(4));
+    currentPrice = Number(
+      (currentPrice + (Math.random() - 0.49) * 0.0008).toFixed(4)
+    );
     io.emit('priceTick', { time: Date.now(), price: currentPrice });
   }, 1000);
 
@@ -666,32 +557,25 @@ async function startServer() {
         "SELECT * FROM trades WHERE status = 'active' AND expires_at <= NOW()"
       );
       for (let trade of expiredTrades.rows) {
-        const exitPrice = currentPrice;
         const won =
-          (trade.direction === 'higher' && exitPrice > trade.entry_price) ||
-          (trade.direction === 'lower' && exitPrice < trade.entry_price);
+          (trade.direction === 'higher' && currentPrice > trade.entry_price) ||
+          (trade.direction === 'lower' && currentPrice < trade.entry_price);
         const payout = won ? Number(trade.amount) * 1.92 : 0;
-        const status = won ? 'won' : 'lost';
-
         await pool.query(
           'UPDATE trades SET status = $1, exit_price = $2, payout = $3 WHERE id = $4',
-          [status, exitPrice, payout, trade.id]
+          [won ? 'won' : 'lost', currentPrice, payout, trade.id]
         );
-        if (won) {
+        if (won)
           await pool.query(
             'UPDATE users SET balance = balance + $1 WHERE id = $2',
             [payout, trade.user_id]
           );
-        }
       }
-    } catch (err) {
-      console.error('Worker Error:', err);
-    }
+    } catch (err) {}
   }, 1000);
 
-  server.listen(PORT, () => {
-    console.log(`🚀 TradeNova fully operational at http://localhost:${PORT}`);
-  });
+  app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+  server.listen(PORT, () => console.log(`🚀 TradeNova live at port ${PORT}`));
 }
 
 startServer().catch((err) => console.error(err));

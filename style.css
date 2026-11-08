@@ -12,7 +12,6 @@ body {
   overflow: hidden;
 }
 
-/* AUTHENTICATION STYLES */
 .auth-wrapper {
   height: 100vh;
   display: flex;
@@ -94,6 +93,18 @@ body {
   top: 4px;
   font-size: 0.7rem;
   color: #0faf59;
+}
+
+.password-group {
+  position: relative;
+}
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 1.1rem;
 }
 
 .auth-options {
@@ -179,7 +190,6 @@ body {
   background: #222b45;
 }
 
-/* AUTO-DISMISSING STATUS BANNERS */
 .status-banner {
   margin-top: 15px;
   font-size: 0.85rem;
@@ -199,7 +209,6 @@ body {
   border: 1px solid rgba(15, 175, 89, 0.3);
 }
 
-/* MAIN DASHBOARD LAYOUT */
 .dashboard-wrapper {
   height: 100vh;
   display: flex;
@@ -246,63 +255,30 @@ body {
   font-weight: bold;
 }
 
+.btn-history,
+.btn-deposit,
+.btn-withdraw,
+.btn-logout {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+}
 .btn-history {
   background-color: #2a3655;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
 }
-.btn-history:hover {
-  background-color: #354368;
-}
-
 .btn-deposit {
   background-color: #0faf59;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
 }
-.btn-deposit:hover {
-  background-color: #0e9c4f;
-}
-
 .btn-withdraw {
   background-color: #3366ff;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
 }
-.btn-withdraw:hover {
-  background-color: #2952cc;
-}
-
 .btn-logout {
   background-color: #ff4646;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-logout:hover {
-  background-color: #e03b3b;
 }
 
-/* WORKSPACE & TRADING PANEL */
 .workspace {
   flex: 1;
   display: flex;
@@ -373,17 +349,10 @@ body {
 .btn-call {
   background-color: #0faf59;
 }
-.btn-call:hover {
-  background-color: #0e9c4f;
-}
 .btn-put {
   background-color: #ff4646;
 }
-.btn-put:hover {
-  background-color: #e03b3b;
-}
 
-/* MODALS & TABLES */
 .modal {
   display: none;
   position: fixed;
@@ -417,16 +386,6 @@ body {
   cursor: pointer;
   color: #8f9bb3;
 }
-.modal-content h2 {
-  font-size: 1.3rem;
-  margin-bottom: 8px;
-}
-.modal-content p {
-  font-size: 0.85rem;
-  color: #8f9bb3;
-  margin-bottom: 20px;
-}
-
 .table-container {
   margin-top: 15px;
   overflow-x: auto;

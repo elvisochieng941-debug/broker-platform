@@ -1,7 +1,4 @@
-// Automatically use Render backend when hosted on GitHub Pages, or localhost for local testing
-const BACKEND_URL = window.location.hostname.includes('github.io')
-  ? 'https://tradenova-backend.onrender.com' // Replace with your exact Render service URL if different
-  : '';
+const BACKEND_URL = ''; // Fully unified single service on Render
 
 let socket;
 let candlestickSeries;
@@ -44,21 +41,30 @@ function backToSignin() {
   switchAuthTab('signin');
 }
 
+// Password visibility toggle function
+function togglePassword(fieldId, iconEl) {
+  const input = document.getElementById(fieldId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    iconEl.textContent = '🔒';
+  } else {
+    input.type = 'password';
+    iconEl.textContent = '👁️';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/status`, {
       credentials: 'include',
     });
     const data = await res.json();
-    if (data.authenticated) {
-      showDashboard(data.user);
-    }
+    if (data.authenticated) showDashboard(data.user);
   } catch (err) {
     console.error('Session check failed:', err);
   }
 });
 
-// Sign In
 document.getElementById('signinForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('signinEmail').value;
@@ -72,7 +78,6 @@ document.getElementById('signinForm').addEventListener('submit', async (e) => {
     body: JSON.stringify({ email, password, remember }),
   });
   const data = await res.json();
-
   if (data.success) {
     showBanner('signinStatus', data.message, 'success');
     setTimeout(() => showDashboard(data.user), 1000);
@@ -81,7 +86,6 @@ document.getElementById('signinForm').addEventListener('submit', async (e) => {
   }
 });
 
-// Sign Up (Triggers Verification Code Email)
 document.getElementById('signupForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('signupEmail').value;
@@ -95,7 +99,6 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     body: JSON.stringify({ email, password, phone }),
   });
   const data = await res.json();
-
   if (data.success && data.requiresVerification) {
     pendingVerificationEmail = data.email;
     document.getElementById('signupForm').style.display = 'none';
@@ -106,20 +109,20 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
   }
 });
 
-// Verify Code Form
 document.getElementById('verifyForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const code = document.getElementById('verificationCode').value;
-  const remember = document.getElementById('signupRemember').checked;
-
   const res = await fetch(`${BACKEND_URL}/api/auth/verify-code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ email: pendingVerificationEmail, code, remember }),
+    body: JSON.stringify({
+      email: pendingVerificationEmail,
+      code,
+      remember: true,
+    }),
   });
   const data = await res.json();
-
   if (data.success) {
     showBanner('verifyStatus', data.message, 'success');
     setTimeout(() => showDashboard(data.user), 1000);
@@ -155,7 +158,6 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
   document.getElementById('authContainer').style.display = 'flex';
 });
 
-// Dashboard & Live Charts
 async function showDashboard(user) {
   document.getElementById('authContainer').style.display = 'none';
   document.getElementById('dashboardContainer').style.display = 'flex';
@@ -182,7 +184,6 @@ async function showDashboard(user) {
 
   const nowSec = Math.floor(Date.now() / 1000);
   let currentCandleTime = nowSec - (nowSec % 60);
-
   candlestickSeries.setData([
     {
       time: currentCandleTime - 120,
@@ -215,8 +216,7 @@ async function showDashboard(user) {
     close: 1.0925,
   };
 
-  // Connect Socket.io with credentials support
-  socket = io(BACKEND_URL || undefined, { withCredentials: true });
+  socket = io({ withCredentials: true });
   socket.on('priceTick', (data) => {
     latestPrice = data.price;
     const tickTime = Math.floor(data.time / 1000);
@@ -237,16 +237,8 @@ async function showDashboard(user) {
     }
     candlestickSeries.update(activeCandle);
   });
-
-  window.addEventListener('resize', () => {
-    chart.applyOptions({
-      width: chartContainer.clientWidth,
-      height: chartContainer.clientHeight,
-    });
-  });
 }
 
-// Place Trade
 document
   .getElementById('btnHigher')
   .addEventListener('click', () => executeTrade('higher'));
@@ -265,13 +257,12 @@ async function executeTrade(direction) {
     body: JSON.stringify({ asset, amount, direction, entryPrice: latestPrice }),
   });
   const data = await res.json();
-
   if (data.success) {
     document.getElementById('userBalance').textContent =
       `$${Number(data.newBalance).toFixed(2)}`;
     showBanner(
       'tradeStatus',
-      `Trade placed (${direction.toUpperCase()}) at ${latestPrice}!`,
+      `Trade placed (${direction.toUpperCase()})!`,
       'success'
     );
   } else {
@@ -279,7 +270,7 @@ async function executeTrade(direction) {
   }
 }
 
-// Modals Setup
+// Modals
 const depositModal = document.getElementById('depositModal');
 document
   .getElementById('openDepositModal')
@@ -287,17 +278,16 @@ document
 document
   .getElementById('closeModal')
   .addEventListener('click', () => (depositModal.style.display = 'none'));
-
 document.getElementById('depositForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const phone = document.getElementById('depositPhone').value;
-  const amount = document.getElementById('depositAmount').value;
-
   const res = await fetch(`${BACKEND_URL}/api/deposit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ amount, phone }),
+    body: JSON.stringify({
+      amount: document.getElementById('depositAmount').value,
+      phone: document.getElementById('depositPhone').value,
+    }),
   });
   const data = await res.json();
   showBanner(
@@ -307,7 +297,6 @@ document.getElementById('depositForm').addEventListener('submit', async (e) => {
   );
 });
 
-// Withdraw Modal
 const withdrawModal = document.getElementById('withdrawModal');
 document
   .getElementById('openWithdrawModal')
@@ -315,22 +304,20 @@ document
 document
   .getElementById('closeWithdrawModal')
   .addEventListener('click', () => (withdrawModal.style.display = 'none'));
-
 document
   .getElementById('withdrawForm')
   .addEventListener('submit', async (e) => {
     e.preventDefault();
-    const phone = document.getElementById('withdrawPhone').value;
-    const amount = document.getElementById('withdrawAmount').value;
-
     const res = await fetch(`${BACKEND_URL}/api/withdraw`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ amount, phone }),
+      body: JSON.stringify({
+        amount: document.getElementById('withdrawAmount').value,
+        phone: document.getElementById('withdrawPhone').value,
+      }),
     });
     const data = await res.json();
-
     if (data.success) {
       document.getElementById('userBalance').textContent =
         `$${Number(data.newBalance).toFixed(2)}`;
@@ -340,15 +327,13 @@ document
     }
   });
 
-// History Modal
 const historyModal = document.getElementById('historyModal');
 document
   .getElementById('openHistoryModal')
   .addEventListener('click', async () => {
     historyModal.style.display = 'flex';
     const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="7">Loading history...</td></tr>';
-
+    tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
     const res = await fetch(`${BACKEND_URL}/api/trade/history`, {
       credentials: 'include',
     });
@@ -358,19 +343,15 @@ document
         .map(
           (t) => `
       <tr>
-        <td>${t.asset}</td>
-        <td>${t.direction.toUpperCase()}</td>
-        <td>$${Number(t.amount).toFixed(2)}</td>
-        <td>${t.entry_price}</td>
-        <td>${t.exit_price || 'Active...'}</td>
-        <td class="${t.status}">${t.status.toUpperCase()}</td>
-        <td>$${Number(t.payout || 0).toFixed(2)}</td>
+        <td>${t.asset}</td><td>${t.direction.toUpperCase()}</td><td>$${Number(t.amount).toFixed(2)}</td>
+        <td>${t.entry_price}</td><td>${t.exit_price || 'Active...'}</td>
+        <td class="${t.status}">${t.status.toUpperCase()}</td><td>$${Number(t.payout || 0).toFixed(2)}</td>
       </tr>
     `
         )
         .join('');
     } else {
-      tbody.innerHTML = '<tr><td colspan="7">No past trades found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7">No history found.</td></tr>';
     }
   });
 document
