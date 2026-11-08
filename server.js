@@ -12,12 +12,33 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const nodemailer = require('nodemailer');
 const http = require('http');
 const { Server } = require('socket.io');
-const { exec } = require('child_process');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+
+// Configure CORS to allow your GitHub Pages frontend and local development
+app.use(
+  cors({
+    origin: [
+      'https://elvisochieng941-debug.github.io',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ],
+    credentials: true,
+  })
+);
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'https://elvisochieng941-debug.github.io',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ],
+    credentials: true,
+  },
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -31,6 +52,10 @@ const baseServerUrl = urlParts.slice(0, urlParts.length - 1).join('/');
 async function ensureDatabaseExists() {
   const defaultClient = new Client({
     connectionString: `${baseServerUrl}/postgres`,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
   });
   try {
     await defaultClient.connect();
@@ -53,7 +78,14 @@ let pool;
 
 async function startServer() {
   await ensureDatabaseExists();
-  pool = new Pool({ connectionString: targetDbUrl });
+
+  pool = new Pool({
+    connectionString: targetDbUrl,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
+  });
 
   await pool
     .query(
@@ -103,7 +135,6 @@ async function startServer() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(cors());
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.use(
@@ -116,7 +147,8 @@ async function startServer() {
       cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       },
     })
   );
@@ -188,7 +220,6 @@ async function startServer() {
     }
   });
 
-  // Step 1: Request Signup & Send Verification Code (Unverified Account Created)
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, phone } = req.body;
@@ -271,7 +302,6 @@ async function startServer() {
     }
   });
 
-  // Step 2: Confirm Code & Finalize Registration
   app.post('/api/auth/verify-code', async (req, res) => {
     try {
       const { email, code, remember } = req.body;
@@ -441,7 +471,7 @@ async function startServer() {
     });
   });
 
-  // --- TUMA API STK PUSH (FIXED TOKEN EXTRACTION) & WITHDRAWAL ROUTES ---
+  // --- TUMA API STK PUSH & WITHDRAWAL ROUTES ---
 
   const TUMA_BASE_URL = process.env.TUMA_BASE_URL || 'https://api.tuma.co.ke';
 
@@ -450,7 +480,6 @@ async function startServer() {
       email: process.env.TUMA_BUSINESS_EMAIL,
       api_key: process.env.TUMA_API_KEY,
     });
-    // Fixed: Official Tuma docs return token inside response.data.data.token
     return response.data.data.token || response.data.token;
   }
 
@@ -511,7 +540,6 @@ async function startServer() {
     }
   });
 
-  // Withdrawal Route
   app.post('/api/withdraw', async (req, res) => {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -663,9 +691,6 @@ async function startServer() {
 
   server.listen(PORT, () => {
     console.log(`🚀 TradeNova fully operational at http://localhost:${PORT}`);
-    exec(`ngrok http ${PORT}`, (err) => {
-      if (err) console.log('ℹ️ ngrok not auto-started.');
-    });
   });
 }
 

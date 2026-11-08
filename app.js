@@ -1,3 +1,8 @@
+// Automatically use Render backend when hosted on GitHub Pages, or localhost for local testing
+const BACKEND_URL = window.location.hostname.includes('github.io')
+  ? 'https://tradenova-backend.onrender.com' // Replace with your exact Render service URL if different
+  : '';
+
 let socket;
 let candlestickSeries;
 let latestPrice = 1.0925;
@@ -41,7 +46,9 @@ function backToSignin() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    const res = await fetch('/api/auth/status');
+    const res = await fetch(`${BACKEND_URL}/api/auth/status`, {
+      credentials: 'include',
+    });
     const data = await res.json();
     if (data.authenticated) {
       showDashboard(data.user);
@@ -58,9 +65,10 @@ document.getElementById('signinForm').addEventListener('submit', async (e) => {
   const password = document.getElementById('signinPassword').value;
   const remember = document.getElementById('signinRemember').checked;
 
-  const res = await fetch('/api/auth/signin', {
+  const res = await fetch(`${BACKEND_URL}/api/auth/signin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ email, password, remember }),
   });
   const data = await res.json();
@@ -80,9 +88,10 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
   const password = document.getElementById('signupPassword').value;
   const phone = document.getElementById('signupPhone').value;
 
-  const res = await fetch('/api/auth/signup', {
+  const res = await fetch(`${BACKEND_URL}/api/auth/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ email, password, phone }),
   });
   const data = await res.json();
@@ -103,9 +112,10 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
   const code = document.getElementById('verificationCode').value;
   const remember = document.getElementById('signupRemember').checked;
 
-  const res = await fetch('/api/auth/verify-code', {
+  const res = await fetch(`${BACKEND_URL}/api/auth/verify-code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ email: pendingVerificationEmail, code, remember }),
   });
   const data = await res.json();
@@ -121,9 +131,10 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
 document.getElementById('forgotForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('forgotEmail').value;
-  const res = await fetch('/api/auth/forgot-password', {
+  const res = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ email }),
   });
   const data = await res.json();
@@ -136,7 +147,10 @@ document.getElementById('forgotForm').addEventListener('submit', async (e) => {
 
 document.getElementById('btnLogout').addEventListener('click', async () => {
   if (socket) socket.disconnect();
-  await fetch('/api/auth/logout', { method: 'POST' });
+  await fetch(`${BACKEND_URL}/api/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
   document.getElementById('dashboardContainer').style.display = 'none';
   document.getElementById('authContainer').style.display = 'flex';
 });
@@ -201,8 +215,8 @@ async function showDashboard(user) {
     close: 1.0925,
   };
 
-  // Fixed Live Socket.io tick updates
-  socket = io();
+  // Connect Socket.io with credentials support
+  socket = io(BACKEND_URL || undefined, { withCredentials: true });
   socket.on('priceTick', (data) => {
     latestPrice = data.price;
     const tickTime = Math.floor(data.time / 1000);
@@ -244,9 +258,10 @@ async function executeTrade(direction) {
   const amount = parseFloat(document.getElementById('tradeAmount').value) || 10;
   const asset = document.getElementById('assetSelect').value;
 
-  const res = await fetch('/api/trade/place', {
+  const res = await fetch(`${BACKEND_URL}/api/trade/place`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ asset, amount, direction, entryPrice: latestPrice }),
   });
   const data = await res.json();
@@ -278,9 +293,10 @@ document.getElementById('depositForm').addEventListener('submit', async (e) => {
   const phone = document.getElementById('depositPhone').value;
   const amount = document.getElementById('depositAmount').value;
 
-  const res = await fetch('/api/deposit', {
+  const res = await fetch(`${BACKEND_URL}/api/deposit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ amount, phone }),
   });
   const data = await res.json();
@@ -307,9 +323,10 @@ document
     const phone = document.getElementById('withdrawPhone').value;
     const amount = document.getElementById('withdrawAmount').value;
 
-    const res = await fetch('/api/withdraw', {
+    const res = await fetch(`${BACKEND_URL}/api/withdraw`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ amount, phone }),
     });
     const data = await res.json();
@@ -332,7 +349,9 @@ document
     const tbody = document.getElementById('historyTableBody');
     tbody.innerHTML = '<tr><td colspan="7">Loading history...</td></tr>';
 
-    const res = await fetch('/api/trade/history');
+    const res = await fetch(`${BACKEND_URL}/api/trade/history`, {
+      credentials: 'include',
+    });
     const data = await res.json();
     if (data.success && data.trades.length > 0) {
       tbody.innerHTML = data.trades
